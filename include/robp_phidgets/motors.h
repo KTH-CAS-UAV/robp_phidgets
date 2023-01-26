@@ -10,6 +10,7 @@
 
 // ROS
 #include <dynamic_reconfigure/server.h>
+#include <std_srvs/Empty.h>
 
 // STL
 #include <memory>
@@ -26,12 +27,17 @@ class Motors {
 
   void publish();
 
+  bool resetFailsafe(std_srvs::Empty::Request& req,
+                     std_srvs::Empty::Response& res);
+
   void configCallback(robp_phidgets::MotorConfig& config, uint32_t level);
 
  private:
   ros::Subscriber sub_;
-	
+
   ros::Publisher pub_;
+
+  ros::ServiceServer reset_failsafe_srv_;
 
   std::unique_ptr<Motor> left_;
   std::unique_ptr<Motor> right_;

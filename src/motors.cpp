@@ -26,6 +26,9 @@ Motors::Motors(ros::NodeHandle& nh, ros::NodeHandle& nh_priv)
 
   pub_ = nh_priv.advertise<robp_msgs::DutyCycles>("current_duty_cycles", 1);
 
+  reset_failsafe_srv_ =
+      nh_priv.advertiseService("reset_failsafe", &Motors::resetFailsafe, this);
+
   // Dynamic reconfigure
   f_ = boost::bind(&Motors::configCallback, this, _1, _2);
   server_.setCallback(f_);
@@ -61,6 +64,17 @@ void Motors::publish() {
   msg->duty_cycle_right = -right_->velocityUpdate();
 
   pub_.publish(msg);
+}
+
+bool Motors::resetFailsafe(std_srvs::Empty::Request&,
+                           std_srvs::Empty::Response&) {
+  if (left_) {
+    left_->resetFailsafe();
+  }
+  if (right_) {
+    right_->resetFailsafe();
+  }
+  return true;
 }
 
 void Motors::configCallback(robp_phidgets::MotorConfig& config,
