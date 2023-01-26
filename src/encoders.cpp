@@ -46,7 +46,7 @@ void Encoders::publish() {
   std::tie(msg->delta_encoder_left, msg->delta_time_left) = left_->change();
   std::tie(msg->delta_encoder_right, msg->delta_time_right) = right_->change();
   msg->encoder_left = left_->position();
-  msg->delta_time_right = -msg->delta_time_right;
+  msg->delta_encoder_right = -msg->delta_encoder_right;
   msg->encoder_right = -right_->position();
 
   pub_.publish(msg);
