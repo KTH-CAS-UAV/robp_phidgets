@@ -9,6 +9,8 @@
 	</group>
 
 	<node pkg="nodelet" type="nodelet" name="MotorsNodelet" args="load robp_phidgets/MotorsNodelet $(arg manager)" output="screen">
+		<remap from="~duty_cycles" to="/motor/duty_cycles"/>
+		<remap from="~current_duty_cycles" to="/motor/current_duty_cycles"/>
 		<param name="left_port" value="$(arg left_port)"/>
 		<param name="right_port" value="$(arg right_port)"/>
 	</node>

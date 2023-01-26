@@ -29,6 +29,14 @@ void Motor::create() {
 void Motor::assignEventHandlers() {
   PhidgetReturnCode ret;
 
+  ret = PhidgetDCMotor_setOnVelocityUpdateHandler(encoder_,
+                                                  velocityUpdateCallback, this);
+  if (EPHIDGET_OK != ret) {
+    throw PhidgetError("Failed to set on velocity update handler on port " +
+                           std::to_string(port_),
+                       ret);
+  }
+
   ret = Phidget_setOnAttachHandler(reinterpret_cast<PhidgetHandle>(motor_),
                                    attachCallback, this);
   if (EPHIDGET_OK != ret) {
