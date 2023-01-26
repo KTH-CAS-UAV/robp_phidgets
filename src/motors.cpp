@@ -37,6 +37,12 @@ Motors::Motors(ros::NodeHandle& nh, ros::NodeHandle& nh_priv)
 Motors::~Motors() {}
 
 void Motors::dutyCyclesCallback(robp_msgs::DutyCycles::ConstPtr const& msg) {
+  if (!failsafe_enabled_) {
+    failsafe_enabled_ = true;
+    left_->setFailsafe(failsafe_time_);
+    right_->setFailsafe(failsafe_time_);
+  }
+
   if (1 >= std::abs(msg->duty_cycle_left) &&
       1 >= std::abs(msg->duty_cycle_right)) {
     left_->setTargetVelocity(msg->duty_cycle_left);
@@ -91,7 +97,6 @@ void Motors::configCallback(robp_phidgets::MotorConfig& config,
   left_->setDataRate(config.data_rate);
   right_->setDataRate(config.data_rate);
 
-  left_->setFailsafe(config.failsafe_timeout);
-  right_->setFailsafe(config.failsafe_timeout);
+  failsafe_time_ = config.failsafe_timeout;
 }
 }  // namespace robp::phidgets

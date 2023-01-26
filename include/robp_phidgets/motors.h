@@ -42,6 +42,9 @@ class Motors {
   std::unique_ptr<Motor> left_;
   std::unique_ptr<Motor> right_;
 
+  uint32_t failsafe_time_{};
+  bool failsafe_enabled_{false};
+
   dynamic_reconfigure::Server<robp_phidgets::MotorConfig> server_;
   dynamic_reconfigure::Server<robp_phidgets::MotorConfig>::CallbackType f_;
 };
