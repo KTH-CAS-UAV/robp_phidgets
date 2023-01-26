@@ -35,7 +35,7 @@ Encoders::Encoders(ros::NodeHandle& nh, ros::NodeHandle& nh_priv)
 Encoders::~Encoders() {}
 
 void Encoders::publish() {
-  if (!left_->hasChange() || !right_->hasChange()) {
+  if (!left_ || !right_ || !left_->hasChange() || !right_->hasChange()) {
     return;
   }
 

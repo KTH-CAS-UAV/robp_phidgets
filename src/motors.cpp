@@ -49,7 +49,7 @@ void Motors::dutyCyclesCallback(robp_msgs::DutyCycles::ConstPtr const& msg) {
 }
 
 void Motors::publish() {
-  if (!left_->hasUpdate() || !right_->hasUpdate()) {
+  if (!left_ || !right_ || !left_->hasUpdate() || !right_->hasUpdate()) {
     return;
   }
 
