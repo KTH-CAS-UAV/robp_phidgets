@@ -37,6 +37,10 @@ Motors::Motors(ros::NodeHandle& nh, ros::NodeHandle& nh_priv)
 Motors::~Motors() {}
 
 void Motors::dutyCyclesCallback(robp_msgs::DutyCycles::ConstPtr const& msg) {
+  if (!left_ || !right_) {
+    return;
+  }
+
   if (!failsafe_enabled_) {
     failsafe_enabled_ = true;
     left_->setFailsafe(failsafe_time_);
@@ -55,6 +59,9 @@ void Motors::dutyCyclesCallback(robp_msgs::DutyCycles::ConstPtr const& msg) {
     left_->setTargetVelocity(0);
     right_->setTargetVelocity(0);
   }
+
+  left_->resetFailsafe();
+  right_->resetFailsafe();
 }
 
 void Motors::publish() {
