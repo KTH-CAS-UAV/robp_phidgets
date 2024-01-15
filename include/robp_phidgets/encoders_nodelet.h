@@ -5,21 +5,20 @@
 #include <robp_phidgets/encoders.h>
 
 // ROS
-#include <nodelet/nodelet.h>
+#include <rclcpp/rclcpp.hpp>
 
 // STL
 #include <memory>
 
-namespace robp::phidgets {
-class EncodersNodelet : public nodelet::Nodelet {
+namespace robp::phidgets
+{
+class EncodersNode : public rclcpp::Node
+{
  public:
-  ~EncodersNodelet() override = default;
+	explicit EncodersNode(rclcpp::NodeOptions const& options);
 
  private:
-  void onInit() override;
-
- private:
-  std::unique_ptr<Encoders> encoders_;
+	std::unique_ptr<Encoders> encoders_;
 };
 }  // namespace robp::phidgets
 

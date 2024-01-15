@@ -12,7 +12,8 @@
 
   <author email="dduberg@kth.se">Daniel Duberg</author>
 
-  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
   <depend>angles</depend>
   <depend>dynamic_reconfigure</depend>
   <exec_depend>imu_filter_madgwick</exec_depend>
@@ -28,6 +29,6 @@
   <depend>tf2_geometry_msgs</depend>
 
   <export>
-    <nodelet plugin="${prefix}/nodelet_plugins.xml" />
+    <build_type>ament_cmake</build_type>
   </export>
 </package>

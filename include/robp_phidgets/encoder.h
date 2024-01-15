@@ -7,70 +7,66 @@ extern "C" {
 }
 
 // STL
+#include <atomic>
 #include <functional>
-#include <mutex>
 #include <utility>
 
-namespace robp::phidgets {
-class Encoder {
+namespace robp::phidgets
+{
+class Encoder
+{
  public:
-  Encoder(int port, uint32_t attach_timeout_ms, std::function<void()> callback);
+	Encoder(int port, uint32_t attach_timeout_ms, std::function<void()> callback);
 
-  ~Encoder();
+	~Encoder();
 
-  double dataRate() const;
+	double dataRate() const;
 
-  void setDataRate(double rate);
+	void setDataRate(double rate);
 
-  int64_t indexPosition() const;
+	int64_t indexPosition() const;
 
-  int64_t position() const;
+	int64_t position() const;
 
-  void setPosition(int64_t position);
+	void setPosition(int64_t position);
 
-  uint32_t positionChangeTrigger() const;
+	uint32_t positionChangeTrigger() const;
 
-  void setPositionChangeTrigger(uint32_t trigger);
+	void setPositionChangeTrigger(uint32_t trigger);
 
-  int port() const;
+	int port() const;
 
-  std::pair<int, double> change() const;
-
-  bool hasChange() const;
+	int change() const;
 
  private:
-  void create();
+	void create();
 
-  void assignEventHandlers();
+	void assignEventHandlers();
 
-  void init();
+	void init();
 
-  static void CCONV positionChangeCallback(PhidgetEncoderHandle ch, void *ctx,
-                                           int position_change,
-                                           double time_change,
-                                           int index_triggered);
+	static void CCONV positionChangeCallback(PhidgetEncoderHandle ch, void *ctx,
+	                                         int position_change, double time_change,
+	                                         int index_triggered);
 
-  static void CCONV attachCallback(PhidgetHandle ch, void *ctx);
+	static void CCONV attachCallback(PhidgetHandle ch, void *ctx);
 
-  static void CCONV detachCallback(PhidgetHandle ch, void *ctx);
+	static void CCONV detachCallback(PhidgetHandle ch, void *ctx);
 
-  static void CCONV errorCallback(PhidgetHandle ch, void *ctx,
-                                  Phidget_ErrorEventCode code,
-                                  char const *description);
+	static void CCONV errorCallback(PhidgetHandle ch, void *ctx,
+	                                Phidget_ErrorEventCode code, char const *description);
 
  private:
-  PhidgetEncoderHandle encoder_;
+	PhidgetEncoderHandle encoder_;
 
-  std::function<void()> callback_;
+	std::function<void()> callback_;
 
-  int port_;
+	int port_;
 
-  double data_rate_{-1};
-  int position_change_trigger_{-1};
+	double data_rate_{-1};
+	int    position_change_trigger_{-1};
 
-  mutable std::mutex m_;
-  mutable int position_change_{};
-  mutable double time_change_{};
+	mutable std::atomic_int position_change_{};
 };
 }  // namespace robp::phidgets
 

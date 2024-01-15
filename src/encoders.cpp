@@ -1,63 +1,72 @@
 // robp_phidgets
 #include <robp_phidgets/encoders.h>
 
-// robp_msgs
-#include <robp_msgs/Encoders.h>
+namespace robp::phidgets
+{
+Encoders::Encoders(rclcpp::NodeOptions const& options) : Node("encoders", options)
+{
+	this->declare_parameter("left_port", int{0});
+	this->declare_parameter("right_port", int{0});
+	this->declare_parameter("timeout", int(PHIDGET_TIMEOUT_DEFAULT));
+	this->declare_parameter("data_rate", double{20.0});
+	this->declare_paramter("position_change_trigger", int{0});
 
-namespace robp::phidgets {
-Encoders::Encoders(ros::NodeHandle& nh, ros::NodeHandle& nh_priv)
-    : nh_(nh), server_(nh_priv) {
-  int port_left, port_right;
-  if (!nh_priv.getParam("left_port", port_left)) {
-    ROS_FATAL("Must specify 'left_port'");
-    exit(1);
-  }
-  if (!nh_priv.getParam("right_port", port_right)) {
-    ROS_FATAL("Must specify 'right_port'");
-    exit(1);
-  }
+	int      port_left         = this->get_parameter("left_port").as_int();
+	int      port_right        = this->get_parameter("right_port").as_int();
+	uint32_t attach_timeout_ms = this->get_parameter("timeout").as_int();
 
-  uint32_t attach_timeout_ms =
-      nh_priv.param("timeout", PHIDGET_TIMEOUT_DEFAULT);
+	if (port_left == port_right) {
+		RCLCPP_FATAL(this->get_logger(), "Left and right port cannot be the same");
+		exit(1);
+	}
 
-  pub_ = nh_priv.advertise<robp_msgs::Encoders>("encoders", 1);
+	pub_ = create_publisher<robp_interfaces::msg::Encoders>("encoders", 1);
 
-  left_ = std::make_unique<Encoder>(port_left, attach_timeout_ms,
+	left_  = std::make_unique<Encoder>(port_left, attach_timeout_ms,
                                     std::bind(&Encoders::publish, this));
-  right_ = std::make_unique<Encoder>(port_right, attach_timeout_ms,
-                                     std::bind(&Encoders::publish, this));
+	right_ = std::make_unique<Encoder>(port_right, attach_timeout_ms,
+	                                   std::bind(&Encoders::publish, this));
 
-  // Dynamic reconfigure
-  f_ = boost::bind(&Encoders::configCallback, this, _1, _2);
-  server_.setCallback(f_);
+	this->set_on_parameters_set_callback(
+	    std::bind(&Encoders::parametersCallback, this, std::placeholders::_1));
 }
 
-Encoders::~Encoders() {}
+void Encoders::publish()
+{
+	if (!left_ || !right_) {
+		return;
+	}
 
-void Encoders::publish() {
-  if (!left_ || !right_ || !left_->hasChange() || !right_->hasChange()) {
-    return;
-  }
+	auto msg = std::make_unique<robp_interfaces::msg::Encoders>();
+	// msg->header.stamp
 
-  robp_msgs::Encoders::Ptr msg(new robp_msgs::Encoders);
-  msg->header.stamp = ros::Time::now();
-  msg->header.frame_id = "";
+	msg->delta_encoder_left  = left_->change();
+	msg->encoder_left        = left_->position();
+	msg->delta_encoder_right = -right_->change();
+	msg->encoder_right       = -right_->position();
 
-  std::tie(msg->delta_encoder_left, msg->delta_time_left) = left_->change();
-  std::tie(msg->delta_encoder_right, msg->delta_time_right) = right_->change();
-  msg->encoder_left = left_->position();
-  msg->delta_encoder_right = -msg->delta_encoder_right;
-  msg->encoder_right = -right_->position();
-
-  pub_.publish(msg);
+	pub_->publish(std::move(msg));
 }
 
-void Encoders::configCallback(robp_phidgets::EncoderConfig& config,
-                              uint32_t level) {
-  left_->setDataRate(config.data_rate);
-  right_->setDataRate(config.data_rate);
-
-  left_->setPositionChangeTrigger(config.position_change_trigger);
-  right_->setPositionChangeTrigger(config.position_change_trigger);
+rcl_interfaces::msg::SetParametersResult Encoders::parametersCallback(
+    std::vector<rclcpp::Parameter> const& parameters)
+{
+	rcl_interfaces::msg::SetParametersResult result;
+	result.successful = true;
+	result.reason     = "success";
+	for (auto const& parameter : parameters) {
+		if ("data_rate" == parameter.get_name() &&
+		    rclcpp::ParameterType::PARAMETER_DOUBLE == parameter.get_type()) {
+			double data_rate = parameter.as_double();
+			left_->setDataRate(data_rate);
+			right_->setDataRate(data_rate);
+		} else if ("position_change_trigger" == parameter.get_name() &&
+		           rclcpp::ParameterType::PARAMETER_INT == parameter.get_type()) {
+			int position_change_trigger = parameter.as_int();
+			left_->setPositionChangeTrigger(position_change_trigger);
+			right_->setPositionChangeTrigger(position_change_trigger);
+		}
+	}
+	return result;
 }
 }  // namespace robp::phidgets

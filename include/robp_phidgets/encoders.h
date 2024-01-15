@@ -5,34 +5,33 @@
 #include <robp_phidgets/EncoderConfig.h>
 #include <robp_phidgets/encoder.h>
 
+// robp_interfaces
+#include <robp_interfaces/msg/encoders.hpp>
+
 // ROS
-#include <dynamic_reconfigure/server.h>
+#include <rclcpp/rclcpp.hpp>
 
 // STL
 #include <memory>
 
-namespace robp::phidgets {
-class Encoders {
+namespace robp::phidgets
+{
+class Encoders : public rclcpp::Node
+{
  public:
-  Encoders(ros::NodeHandle& nh, ros::NodeHandle& nh_priv);
-
-  ~Encoders();
+	explicit Encoders(rclcpp::NodeOptions const& options);
 
  private:
-  void publish();
+	void publish();
 
-  void configCallback(robp_phidgets::EncoderConfig& config, uint32_t level);
+	rcl_interfaces::msg::SetParametersResult parametersCallback(
+	     std::vector<rclcpp::Parameter> const& parameters);
 
  private:
-  ros::NodeHandle& nh_;
+	rclcpp::Publisher<robp_interfaces::msg::Encoders>::SharedPtr pub_;
 
-  ros::Publisher pub_;
-
-  std::unique_ptr<Encoder> left_;
-  std::unique_ptr<Encoder> right_;
-
-  dynamic_reconfigure::Server<robp_phidgets::EncoderConfig> server_;
-  dynamic_reconfigure::Server<robp_phidgets::EncoderConfig>::CallbackType f_;
+	std::unique_ptr<Encoder> left_;
+	std::unique_ptr<Encoder> right_;
 };
 }  // namespace robp::phidgets
 
