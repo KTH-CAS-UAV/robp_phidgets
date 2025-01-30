@@ -15,18 +15,18 @@ Motors::Motors(rclcpp::NodeOptions const& options) : Node("motors", options)
 	double braking_strength = this->declare_parameter("braking_strength", 1.0);
 	double current_limit    = this->declare_parameter("current_limit", 2.0);
 	double data_rate        = this->declare_parameter("data_rate", 10.0);
-	failsafe_time_          = this->declare_parameter("failsafe_timeout", 500);
+	failsafe_time_          = this->declare_parameter("failsafe_timeout (ms)", 500);
 
 	if (hub_port_left == hub_port_right) {
 		RCLCPP_FATAL(this->get_logger(), "Left and right port cannot be the same");
 		exit(1);
 	}
 
-	pub_ =
-	    this->create_publisher<robp_interfaces::msg::DutyCycles>("/motor/current_duty_cycles", 1);
+	pub_ = this->create_publisher<robp_interfaces::msg::DutyCycles>(
+	    "/motor/current_duty_cycles", 1);
 
 	left_  = std::make_unique<Motor>(serial_num_left, hub_port_left, false, 0,
-                                  std::bind(&Motors::publish, this));
+	                                 std::bind(&Motors::publish, this));
 	right_ = std::make_unique<Motor>(serial_num_right, hub_port_right, false, 0,
 	                                 std::bind(&Motors::publish, this));
 
@@ -42,13 +42,14 @@ Motors::Motors(rclcpp::NodeOptions const& options) : Node("motors", options)
 	left_->setDataRate(data_rate);
 	right_->setDataRate(data_rate);
 
+	failsafe_timer_ = this->create_wall_timer(std::chrono::milliseconds(failsafe_time_),
+	                                          std::bind(&Motors::failsafe, this));
+	left_->setFailsafe(failsafe_time_ + 100);
+	right_->setFailsafe(failsafe_time_ + 100);
+
 	sub_ = this->create_subscription<robp_interfaces::msg::DutyCycles>(
 	    "/motor/duty_cycles", 1,
 	    std::bind(&Motors::dutyCyclesCallback, this, std::placeholders::_1));
-
-	// reset_failsafe_srv_ = this->create_service<std_srvs::srv::Empty>(
-	//     "/motor/reset_failsafe", std::bind(&Motors::resetFailsafe, this, std::placeholders::_1,
-	//                                 std::placeholders::_2));
 }
 
 void Motors::dutyCyclesCallback(robp_interfaces::msg::DutyCycles const& msg)
@@ -57,11 +58,8 @@ void Motors::dutyCyclesCallback(robp_interfaces::msg::DutyCycles const& msg)
 		return;
 	}
 
-	if (!failsafe_enabled_) {
-		failsafe_enabled_ = true;
-		left_->setFailsafe(failsafe_time_);
-		right_->setFailsafe(failsafe_time_);
-	}
+	this->failsafe_timer_->reset();
+	failsafe_first_ = true;
 
 	if (1 >= std::abs(msg.duty_cycle_left) && 1 >= std::abs(msg.duty_cycle_right)) {
 		left_->setTargetVelocity(msg.duty_cycle_left);
@@ -74,9 +72,6 @@ void Motors::dutyCyclesCallback(robp_interfaces::msg::DutyCycles const& msg)
 		left_->setTargetVelocity(0);
 		right_->setTargetVelocity(0);
 	}
-
-	left_->resetFailsafe();
-	right_->resetFailsafe();
 }
 
 void Motors::publish()
@@ -94,16 +89,15 @@ void Motors::publish()
 	pub_->publish(std::move(msg));
 }
 
-void Motors::resetFailsafe(
-    std::shared_ptr<std_srvs::srv::Empty::Request> const /* request */,
-    std::shared_ptr<std_srvs::srv::Empty::Response> /* response */)
+void Motors::failsafe()
 {
-	if (left_) {
-		left_->resetFailsafe();
+	if (failsafe_first_) {
+		failsafe_first_ = false;
+		RCLCPP_WARN(this->get_logger(), "No motor command in over %d ms. Stopping motors!",
+		            failsafe_time_);
 	}
-	if (right_) {
-		right_->resetFailsafe();
-	}
+	left_->setTargetVelocity(0);
+	right_->setTargetVelocity(0);
 }
 }  // namespace robp::phidgets
 

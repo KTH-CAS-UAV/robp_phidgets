@@ -12,6 +12,7 @@
 #include <std_srvs/srv/empty.hpp>
 
 // STL
+#include <cstdint>
 #include <memory>
 
 namespace robp::phidgets
@@ -26,8 +27,7 @@ class Motors : public rclcpp::Node
 
 	void publish();
 
-	void resetFailsafe(std::shared_ptr<std_srvs::srv::Empty::Request> const request,
-	                   std::shared_ptr<std_srvs::srv::Empty::Response>      response);
+	void failsafe();
 
  private:
 	std::unique_ptr<Motor> left_;
@@ -37,10 +37,9 @@ class Motors : public rclcpp::Node
 
 	rclcpp::Subscription<robp_interfaces::msg::DutyCycles>::SharedPtr sub_;
 
-	rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reset_failsafe_srv_;
-
-	uint32_t failsafe_time_{};
-	bool     failsafe_enabled_{false};
+	std::uint32_t                failsafe_time_{};
+	rclcpp::TimerBase::SharedPtr failsafe_timer_;
+	bool                         failsafe_first_{true};
 };
 }  // namespace robp::phidgets
 

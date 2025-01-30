@@ -1,4 +1,12 @@
 cmake_minimum_required(VERSION 3.5)
+
+# The default build type must be set before project()
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR AND NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  message(STATUS "robp_phidgets_temperature: You did not request a specific build type: Choosing 'Release' for maximum performance")
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+endif()
+
 project(robp_phidgets_temperature)
 
 # Default to C++14
@@ -7,12 +15,6 @@ if(NOT CMAKE_CXX_STANDARD)
 endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-# Defaults to release mode
-if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
-  message("${PROJECT_NAME}: You did not request a specific build type: Choosing 'Release' for maximum performance")
-  set(CMAKE_BUILD_TYPE Release)
-endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
