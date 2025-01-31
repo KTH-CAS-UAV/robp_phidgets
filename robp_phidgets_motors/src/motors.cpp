@@ -44,8 +44,8 @@ Motors::Motors(rclcpp::NodeOptions const& options) : Node("motors", options)
 
 	failsafe_timer_ = this->create_wall_timer(std::chrono::milliseconds(failsafe_time_),
 	                                          std::bind(&Motors::failsafe, this));
-	left_->setFailsafe(failsafe_time_ + 100);
-	right_->setFailsafe(failsafe_time_ + 100);
+	// left_->setFailsafe(failsafe_time_ + 100);
+	// right_->setFailsafe(failsafe_time_ + 100);
 
 	sub_ = this->create_subscription<robp_interfaces::msg::DutyCycles>(
 	    "/motor/duty_cycles", 1,
